@@ -1,0 +1,32 @@
+{
+  "name": "dietetic-erp",
+  "version": "1.0.0",
+  "description": "Sistema ERP completo para dietética con POS, inventario y balanza",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "setup": "cd backend && npx prisma generate && npx prisma db push && npx prisma db seed",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "start": "concurrently \"cd backend && npm start\" \"cd frontend && npm start\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "erp",
+    "pos",
+    "dietetic",
+    "inventory"
+  ],
+  "author": "",
+  "license": "MIT"
+}

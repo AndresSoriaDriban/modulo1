@@ -1,0 +1,124 @@
+// Schema de Prisma para el sistema ERP de dietética
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Categorías de productos
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+}
+
+// Productos
+model Product {
+  id          String   @id @default(uuid())
+  barcode     String   @unique // Código de barras único
+  name        String
+  description String?
+
+  // Tipo de venta
+  soldByWeight Boolean  @default(false) // true = se vende por peso, false = unidad
+
+  // Precio
+  price       Float    // Precio por unidad o por kg si es por peso
+
+  // Inventario
+  stock       Float    @default(0) // Cantidad en stock (puede ser decimal para productos por peso)
+  minStock    Float    @default(0) // Stock mínimo antes de alerta
+
+  // Categoría
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  // Relaciones
+  saleItems   SaleItem[]
+  inventoryMovements InventoryMovement[]
+
+  // Auditoría
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([barcode])
+  @@index([categoryId])
+}
+
+// Ventas
+model Sale {
+  id          String     @id @default(uuid())
+
+  // Total
+  total       Float
+
+  // Items
+  items       SaleItem[]
+
+  // Información adicional
+  paymentMethod String   @default("cash") // cash, card, transfer
+  notes       String?
+
+  // Auditoría
+  createdAt   DateTime   @default(now())
+  completedAt DateTime   @default(now())
+
+  @@index([createdAt])
+}
+
+// Items de venta (productos en cada venta)
+model SaleItem {
+  id         String  @id @default(uuid())
+
+  // Venta
+  saleId     String
+  sale       Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  // Producto
+  productId  String
+  product    Product @relation(fields: [productId], references: [id])
+
+  // Cantidad y precio
+  quantity   Float   // Puede ser decimal para productos por peso
+  unitPrice  Float   // Precio unitario al momento de la venta
+  subtotal   Float   // quantity * unitPrice
+
+  // Auditoría
+  createdAt  DateTime @default(now())
+
+  @@index([saleId])
+  @@index([productId])
+}
+
+// Movimientos de inventario
+model InventoryMovement {
+  id          String   @id @default(uuid())
+
+  // Producto
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+
+  // Movimiento
+  type        String   // in (entrada), out (salida), adjustment (ajuste)
+  quantity    Float    // Positivo para entradas, negativo para salidas
+
+  // Stock después del movimiento
+  stockAfter  Float
+
+  // Motivo
+  reason      String?
+  notes       String?
+
+  // Auditoría
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+  @@index([createdAt])
+}
